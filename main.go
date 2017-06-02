@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"gopkg.in/gin-gonic/gin.v1"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"bytes"
 	"os"
 )
@@ -62,21 +60,4 @@ func main() {
 	})
 	r.Run(":3004")
 
-}
-
-func ReverseProxy(salesforceSessionId string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		director := func(req *http.Request) {
-			url, _ := url.Parse(req.Header.Get("SalesforceProxy-Endpoint"))
-			fmt.Println("proxy url: " + url.String())
-			r := c.Request
-			req = r
-			req.URL.Scheme = "https"
-			req.URL.Host = url.Host
-			req.Header["Authorization"] = []string{r.Header.Get("X-Authorization")}
-			req.Header["Content-Type"] = []string{r.Header.Get("Content-Type")}
-		}
-		proxy := &httputil.ReverseProxy{Director: director}
-		proxy.ServeHTTP(c.Writer, c.Request)
-	}
 }
