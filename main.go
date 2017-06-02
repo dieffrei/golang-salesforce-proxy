@@ -24,17 +24,6 @@ func main() {
 		os.Getenv("SF_ENVIROMENT"),
 	)
 
-/*	forceApi, err := force.Create(
-		"v36.0",
-		"3MVG93MGy9V8hF9NrjdwnYswsF4RoGsK0pvcGxiXVZop4LfliEJ59LSgs.uwEIohaAaQ0gMq0LRLAnjUDGFfh",
-		"5754176615975639672",
-		"dieffrei.quadros@saint-gobain.com.dev3",
-		"Topi.1234!@!@",
-		"xPCq179X57quwwYWWlkZ5qo9h",
-		"sandbox",
-	)
-*/
-
 	if err != nil {
 		panic(err)
 	}
@@ -60,8 +49,8 @@ func main() {
 		req, _ := http.NewRequest("GET", salesforceEndpoint, request.Body)
 		req.Header.Add("Authorization", request.Header.Get("X-Authorization"))
 		req.Header.Add("Content-Type", request.Header.Get("Content-Type"))
-
 		resp, err := client.Do(req)
+
 		if err != nil {
 			log.Fatal(err)
 		}
