@@ -60,10 +60,10 @@ func setupRouter(salesforceSessionId string){
 
 	if settings.TemplateDir != "" {
 		r.LoadHTMLGlob(settings.TemplateDir + "/*")
-
 		for i := 0; i < len(settings.Routes); i++ {
+			routeName := settings.Routes[i]
 			r.GET("/", func(c *gin.Context) {
-				c.HTML(http.StatusOK, settings.Routes[i] + ".tmpl", gin.H{
+				c.HTML(http.StatusOK, routeName + ".tmpl", gin.H{
 					"sessionId": salesforceSessionId,
 				})
 			})
