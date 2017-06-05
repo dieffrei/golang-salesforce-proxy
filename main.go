@@ -22,6 +22,7 @@ type Settings struct {
 	TemplateDir string `yaml:"template_dir"`
 	Statics  []string `yaml:"static"`
 	Routes  []string `yaml:"routes"`
+	ServerPort  string `yaml:"server_port"`
 }
 
 func getSettings() (settings *Settings) {
@@ -48,29 +49,33 @@ func getSalesforceConection() (*force.ForceApi, error) {
 	return forceApi, err
 }
 
-func setupRouter(salesforceSessionId string){
-
-	settings := getSettings()
-
-	r := gin.Default()
-
+func setupStaticDirectories(settings *Settings, router *gin.Engine) {
 	for i := 0; i < len(settings.Statics); i++ {
-		r.Static("/" + settings.Statics[i], "./" + settings.Statics[i])
+		router.Static("/" + settings.Statics[i], "./" + settings.Statics[i])
 	}
+}
 
+func setupRoutes(settings *Settings, router *gin.Engine, salesforceSessionId string) {
 	if settings.TemplateDir != "" {
-		r.LoadHTMLGlob(settings.TemplateDir + "/*")
+		router.LoadHTMLGlob(settings.TemplateDir + "/*")
 		for i := 0; i < len(settings.Routes); i++ {
 			routeName := settings.Routes[i]
-			r.GET("/", func(c *gin.Context) {
+			router.GET("/", func(c *gin.Context) {
 				c.HTML(http.StatusOK, routeName + ".tmpl", gin.H{
 					"sessionId": salesforceSessionId,
 				})
 			})
 		}
 	}
+}
 
-	r.Any("/proxy", func (c *gin.Context){
+func setupRouter(salesforceSessionId string){
+
+	settings := getSettings()
+	router := gin.Default()
+	setupRoutes(settings, router, salesforceSessionId)
+
+	router.Any("/proxy", func (c *gin.Context){
 		request := c.Request
 		salesforceEndpoint := request.Header.Get("SalesforceProxy-Endpoint")
 		client := &http.Client{}
@@ -87,7 +92,7 @@ func setupRouter(salesforceSessionId string){
 		buf.ReadFrom(resp.Body)
 		c.String(200, buf.String())
 	})
-	r.Run(":3004")
+	router.Run(":" + settings.ServerPort)
 }
 
 func main() {

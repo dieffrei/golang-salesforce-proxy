@@ -19,3 +19,5 @@ routes:
 static:
   - bower_components
   - app
+
+server_port: 3004
