@@ -26,7 +26,7 @@ type Settings struct {
 }
 
 func getSettings() (settings *Settings) {
-	yamlFileBytes, err := ioutil.ReadFile("settings.yaml")
+	yamlFileBytes, err := ioutil.ReadFile("sfproxy-settings.yaml")
 	yaml.Unmarshal(yamlFileBytes, &settings)
 	if err != nil {
 		panic(err)
