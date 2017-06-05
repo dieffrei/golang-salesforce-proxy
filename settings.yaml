@@ -1,0 +1,21 @@
+sf_version: v36.0
+sf_client_id: 23234234324.uwEIohaAaQ0gMq0LRLAnjUDGFfh
+sf_client_secret: 5754176615975639672
+sf_user_name: user@name.com
+sf_password: 123456
+sf_token: xPCq179X57quwwYWWlkZ5qo9h
+sf_enviroment: sandbox #production/production
+
+#template' directory
+template_dir: views
+
+#Routing needs the same template name
+# if you create a "index" route
+# you need a template named as index.tmpl
+routes:
+  - index
+
+#static directories
+static:
+  - bower_components
+  - app

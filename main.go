@@ -7,42 +7,72 @@ import (
 	"gopkg.in/gin-gonic/gin.v1"
 	"net/http"
 	"bytes"
-	"os"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
-func main() {
+type Settings struct {
+	ApiVersion string `yaml:"sf_version"`
+	ClientId string `yaml:"sf_client_id"`
+	ClientSecret string `yaml:"sf_client_secret"`
+	UserName string `yaml:"sf_user_name"`
+	Password string `yaml:"sf_password"`
+	Token string `yaml:"sf_token"`
+	Enviroment string `yaml:"sf_enviroment"`
+	TemplateDir string `yaml:"template_dir"`
+	Statics  []string `yaml:"static"`
+	Routes  []string `yaml:"routes"`
+}
 
-	forceApi, err := force.Create(
-		os.Getenv("SF_VERSION"),
-		os.Getenv("SF_CLIENT_ID"),
-		os.Getenv("SF_CLIENT_SECRET"),
-		os.Getenv("SF_USER_NAME"),
-		os.Getenv("SF_PASSWORD"),
-		os.Getenv("SF_TOKEN"),
-		os.Getenv("SF_ENVIROMENT"),
-	)
-
+func getSettings() (settings *Settings) {
+	yamlFileBytes, err := ioutil.ReadFile("settings.yaml")
+	yaml.Unmarshal(yamlFileBytes, &settings)
 	if err != nil {
 		panic(err)
 	}
+	return settings
+}
 
-	fmt.Println("token: " + forceApi.GetAccessToken())
-	salesforceSessionId := forceApi.GetAccessToken();
+func getSalesforceConection() (*force.ForceApi, error) {
+	settings := getSettings()
+	log.Println(settings)
+	forceApi, err := force.Create(
+		settings.ApiVersion,
+		settings.ClientId,
+		settings.ClientSecret,
+		settings.UserName,
+		settings.Password,
+		settings.Token,
+		settings.Enviroment,
+	)
+	return forceApi, err
+}
+
+func setupRouter(salesforceSessionId string){
+
+	settings := getSettings()
 
 	r := gin.Default()
-	r.Static("/bower_components", "./bower_components")
-	r.Static("/app", "./app")
-	r.LoadHTMLGlob("views/*")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"sessionId": salesforceSessionId,
-		})
-	})
+
+	for i := 0; i < len(settings.Statics); i++ {
+		r.Static("/" + settings.Statics[i], "./" + settings.Statics[i])
+	}
+
+	if settings.TemplateDir != "" {
+		r.LoadHTMLGlob(settings.TemplateDir + "/*")
+
+		for i := 0; i < len(settings.Routes); i++ {
+			r.GET("/", func(c *gin.Context) {
+				c.HTML(http.StatusOK, settings.Routes[i] + ".tmpl", gin.H{
+					"sessionId": salesforceSessionId,
+				})
+			})
+		}
+	}
 
 	r.Any("/proxy", func (c *gin.Context){
 		request := c.Request
 		salesforceEndpoint := request.Header.Get("SalesforceProxy-Endpoint")
-
 		client := &http.Client{}
 		req, _ := http.NewRequest("GET", salesforceEndpoint, request.Body)
 		req.Header.Add("Authorization", request.Header.Get("X-Authorization"))
@@ -55,9 +85,17 @@ func main() {
 
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(resp.Body)
-
 		c.String(200, buf.String())
 	})
 	r.Run(":3004")
+}
 
+func main() {
+	forceApi, error := getSalesforceConection()
+	if error != nil {
+		panic(error)
+	}
+	fmt.Println("token: " + forceApi.GetAccessToken())
+	salesforceSessionId := forceApi.GetAccessToken();
+	setupRouter(salesforceSessionId)
 }
